@@ -48,17 +48,29 @@ for document in cursor:
             """
             Insert twitter data
             """
-            cursor = con.cursor()
+
             # twitter, golf
             # query = "INSERT INTO Test (username, created_at, tweet, retweet_count,place, location) VALUES (%s, %s, %s, %s, %s, %s)"
             # cursor.execute(query, (username, created_at, tweet, retweet_count, place, location))
-
-            query = "INSERT INTO Test (id, user_name, text) VALUES (%s, %s, %s)"
-            cursor.execute(query, (document['id'], document['user']['name'], document['text']))
-
-
+            cursor = con.cursor()
+            query = "INSERT INTO user (user_id, screen_name, followers_count) VALUES (%s, %s, %s)"
+            print('user id:', document['user']['id'])
+            cursor.execute(query, (
+            document['user']['id'], document['user']['screen_name'], document['user']['followers_count']))
             con.commit()
             cursor.close()
+
+
+            cursor = con.cursor()
+            query = "INSERT INTO tweet (id, source, text, user_id) VALUES (%s, %s, %s, %s)"
+            cursor.execute(query, (document['id'], document['source'], document['text'], document['user']['id']))
+            con.commit()
+            cursor.close()
+
+
+            # query = "INSERT INTO place (place_id, country, full_name) VALUES (%s, %s, %s)"
+            # cursor.execute(query, (document['place']['place']['id'], document['user']['name'], document['text']))
+
 
         con.close()
 
