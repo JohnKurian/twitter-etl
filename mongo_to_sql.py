@@ -15,83 +15,90 @@
 
 import mysql.connector
 from mysql.connector import Error
-import tweepy
-import json
-from dateutil import parser
-import time
-import os
-import subprocess
 from pymongo import MongoClient
+import time
 
-myclient = MongoClient()
-mydb = myclient["tweetbase"]
-staging_col = mydb["tweets_staging"]
-
-
-cursor = staging_col.find({})
+from transformations import clean_tweets, preprocess
 
 
 
-con = mysql.connector.connect(host='127.0.0.1',
-                                      database='twitterdb',
-                                      user='root',
-                                      password='7dc41992',
-                                      charset='utf8',
-                                      auth_plugin='mysql_native_password')
 
-for document in cursor:
-    if document:
-        try:
-            if con.is_connected():
-                """
-                Insert twitter data
-                """
+while True:
+    print('starting sql dump loop...')
+    myclient = MongoClient()
+    mydb = myclient["tweetbase"]
+    staging_col = mydb["tweets_staging"]
 
 
-                if document['user']:
-                    cursor = con.cursor()
-                    query = "INSERT INTO user (user_id, user_created_at, screen_name, friends_count, statuses_count, followers_count) VALUES (%s, %s, %s, %s, %s, %s)"
-                    cursor.execute(query, (
-                    document['user']['id'], document['user']['created_at'], document['user']['screen_name'], document['user']['friends_count'], document['user']['statuses_count'], document['user']['followers_count']))
-                    con.commit()
-                    cursor.close()
-
-                if document['place']:
-                    print('##################')
-                    print(document['place'])
-                    cursor = con.cursor()
-                    query = "INSERT INTO place (place_id, country, place_type, full_name) VALUES (%s, %s, %s, %s)"
-                    cursor.execute(query, (
-                    document['place']['id'], document['place']['country'], document['place']['place_type'], document['place']['full_name']))
-                    con.commit()
-                    cursor.close()
+    cursor = staging_col.find({})
 
 
-                if document['user']:
+
+    con = mysql.connector.connect(host='127.0.0.1',
+                                          database='twitterdb',
+                                          user='root',
+                                          password='7dc41992',
+                                          charset='utf8',
+                                          auth_plugin='mysql_native_password')
+
+    for document in cursor:
+
+        document['text'] = clean_tweets(document['text'])
+        document['text'] = preprocess(document['text'])
+
+        if 'created_at' in document:
+            try:
+                if con.is_connected():
+                    """
+                    Insert twitter data
+                    """
+
+
+                    if document['user']:
+                        cursor = con.cursor()
+                        query = "INSERT INTO user (user_id, user_created_at, screen_name, friends_count, statuses_count, followers_count) VALUES (%s, %s, %s, %s, %s, %s)"
+                        cursor.execute(query, (
+                        document['user']['id'], document['user']['created_at'], document['user']['screen_name'], document['user']['friends_count'], document['user']['statuses_count'], document['user']['followers_count']))
+                        con.commit()
+                        cursor.close()
+
                     if document['place']:
-                        print('$$$$$$$$$$$$$$$$$$$$$$$')
-                        print(document['place'])
                         cursor = con.cursor()
-                        query = "INSERT INTO tweet (id, created_at, source, text, user_id, place_id) VALUES (%s, %s, %s, %s, %s, %s)"
-                        cursor.execute(query, (document['id'], document['created_at'], document['source'], document['text'], document['user']['id'], document['place']['id']))
-                        con.commit()
-                        cursor.close()
-                    else:
-                        cursor = con.cursor()
-                        query = "INSERT INTO tweet (id, created_at, source, text, user_id) VALUES (%s, %s, %s, %s, %s)"
-                        cursor.execute(query, (document['id'], document['created_at'], document['source'], document['text'], document['user']['id']))
+                        query = "INSERT INTO place (place_id, country, place_type, full_name) VALUES (%s, %s, %s, %s)"
+                        cursor.execute(query, (
+                        document['place']['id'], document['place']['country'], document['place']['place_type'], document['place']['full_name']))
                         con.commit()
                         cursor.close()
 
 
+                    if document['user']:
+                        if document['place']:
+                            cursor = con.cursor()
+                            query = "INSERT INTO tweet (id, created_at, source, text, user_id, place_id) VALUES (%s, %s, %s, %s, %s, %s)"
+                            cursor.execute(query, (document['id'], document['created_at'], document['source'], document['text'], document['user']['id'], document['place']['id']))
+                            con.commit()
+                            cursor.close()
+                        else:
+                            cursor = con.cursor()
+                            query = "INSERT INTO tweet (id, created_at, source, text, user_id) VALUES (%s, %s, %s, %s, %s)"
+                            cursor.execute(query, (document['id'], document['created_at'], document['source'], document['text'], document['user']['id']))
+                            con.commit()
+                            cursor.close()
 
-                # query = "INSERT INTO place (place_id, country, full_name) VALUES (%s, %s, %s)"
-                # cursor.execute(query, (document['place']['place']['id'], document['user']['name'], document['text']))
+
+
+                    # query = "INSERT INTO place (place_id, country, full_name) VALUES (%s, %s, %s)"
+                    # cursor.execute(query, (document['place']['place']['id'], document['user']['name'], document['text']))
 
 
 
 
-        except Error as e:
-            print(e)
+            except Error as e:
+                print(e)
 
-con.close()
+        result = staging_col.delete_one({"_id": document['_id']})
+
+    con.close()
+    print('done.')
+    print('sleeping..')
+    time.sleep(100)
