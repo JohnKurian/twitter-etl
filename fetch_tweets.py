@@ -30,6 +30,7 @@ auth.set_access_token(access_token, access_token_secret)
 myclient = MongoClient()
 mydb = myclient["tweetbase"]
 mycol = mydb["tweets"]
+staging_col = mydb["tweets_staging"]
 
 
 # import mysql.connector
@@ -119,9 +120,10 @@ class Streamlistener(tweepy.StreamListener):
 
 
             record = raw_data
-            record['processed'] = 0
+            # record['processed'] = 0
 
             x = mycol.insert_one(record)
+            y = staging_col.insert_one(record)
 
             print("Tweet colleted.")
         except:
