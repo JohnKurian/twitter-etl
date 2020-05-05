@@ -18,27 +18,34 @@ except:
 #Dimension tables
 mycursor.execute("""CREATE TABLE user 
 (user_id double NOT NULL PRIMARY KEY, 
+user_created_at VARCHAR(255), 
 screen_name VARCHAR(255), 
+friends_count VARCHAR(255),
+statuses_count VARCHAR(255),
 followers_count VARCHAR(255))""")
 
 
 
 
 mycursor.execute("""CREATE TABLE place 
-(place_id double NOT NULL PRIMARY KEY, 
+(place_id varchar(255) NOT NULL PRIMARY KEY, 
 country VARCHAR(255), 
+place_type VARCHAR(255),
 full_name VARCHAR(255))""")
 
 
 #Fact table
 mycursor.execute("""CREATE TABLE tweet 
 (id double NOT NULL PRIMARY KEY, 
+created_at VARCHAR(255),
 source VARCHAR(255), 
 text VARCHAR(255),
 
-user_id double NOT NULL,
+user_id double,
+place_id varchar(255),
 
-FOREIGN KEY(user_id) REFERENCES user(user_id))
+FOREIGN KEY(user_id) REFERENCES user(user_id),
+FOREIGN KEY(place_id) REFERENCES place(place_id))
 """)
 
 
