@@ -1,11 +1,22 @@
 #download mysql
 #https://dev.mysql.com/downloads/mysql/
+
+
+# use screen to run this in the backgroud
+# screen -S fetch_tweets -dm python3.7 fetch_tweets.py
+
+# if you want to fetch tweet by object id
+# db.tweets.find('5eb18f9827834a94ed99bceb')
+
+
 import tweepy
 import json
 from dateutil import parser
 import time
 import os
 import subprocess
+import pymongo
+from pymongo import MongoClient
 
 consumer_key = "jjSz1RE4ftTNmqB1XuUTM22Fc"
 consumer_secret = "5SNWrhQStzMp3UDwVY7YGuEofQ4QOBBP4rOo4hGnhKpdFQoVi9"
@@ -16,9 +27,13 @@ access_token_secret = "tjVsF4mx4vS9JO0hPcS7b8qoP7oIZK1A8nX0aMwhkNEDG"
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 
+myclient = MongoClient()
+mydb = myclient["tweetbase"]
+mycol = mydb["tweets"]
+
 
 # import mysql.connector
-from mysql.connector import Error
+# from mysql.connector import Error
 
 
 # importing file which sets env variable
@@ -102,9 +117,13 @@ class Streamlistener(tweepy.StreamListener):
 
                 location = raw_data['user']['location']
 
-                # insert data just collected into MySQL database
-                # connect(username, created_at, tweet, retweet_count, place, location)
-                print("Tweet colleted at: {} ".format(str(tweet)))
+
+            record = raw_data
+            record['processed'] = 0
+
+            x = mycol.insert_one(record)
+
+            print("Tweet colleted.")
         except:
             print('error')
 
