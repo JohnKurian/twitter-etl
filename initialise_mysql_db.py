@@ -40,6 +40,7 @@ mycursor.execute("""CREATE TABLE tweet
 created_at VARCHAR(255),
 source VARCHAR(255), 
 text VARCHAR(255),
+sentiment int,
 
 user_id double,
 place_id varchar(255),

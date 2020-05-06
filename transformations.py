@@ -35,7 +35,7 @@ emoticons = emoticons_happy.union(emoticons_sad)
 
 def clean_tweets(tweet):
     # after tweepy preprocessing the colon symbol left remain after      #removing mentions
-    tweet = re.sub(r':', '', tweet)
+    # tweet = re.sub(r':', '', tweet)
     tweet = re.sub(r'‚Ä¶', '', tweet)
     # replace consecutive non-ASCII characters with a space
     tweet = re.sub(r'[^\x00-\x7F]+', ' ', tweet)

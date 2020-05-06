@@ -18,7 +18,7 @@ from mysql.connector import Error
 from pymongo import MongoClient
 import time
 
-from transformations import clean_tweets, preprocess
+from transformations import clean_tweets, preprocess, sentiment
 
 
 
@@ -45,6 +45,7 @@ while True:
 
         document['text'] = clean_tweets(document['text'])
         document['text'] = preprocess(document['text'])
+        document['sentiment'] = sentiment(document['text'])
 
         if 'created_at' in document:
             try:
@@ -74,14 +75,14 @@ while True:
                     if document['user']:
                         if document['place']:
                             cursor = con.cursor()
-                            query = "INSERT INTO tweet (id, created_at, source, text, user_id, place_id) VALUES (%s, %s, %s, %s, %s, %s)"
-                            cursor.execute(query, (document['id'], document['created_at'], document['source'], document['text'], document['user']['id'], document['place']['id']))
+                            query = "INSERT INTO tweet (id, created_at, source, text, user_id, place_id, sentiment) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                            cursor.execute(query, (document['id'], document['created_at'], document['source'], document['text'], document['user']['id'], document['place']['id'], document['sentiment']))
                             con.commit()
                             cursor.close()
                         else:
                             cursor = con.cursor()
-                            query = "INSERT INTO tweet (id, created_at, source, text, user_id) VALUES (%s, %s, %s, %s, %s)"
-                            cursor.execute(query, (document['id'], document['created_at'], document['source'], document['text'], document['user']['id']))
+                            query = "INSERT INTO tweet (id, created_at, source, text, user_id, sentiment) VALUES (%s, %s, %s, %s, %s, %s)"
+                            cursor.execute(query, (document['id'], document['created_at'], document['source'], document['text'], document['user']['id'], document['sentiment']))
                             con.commit()
                             cursor.close()
 
